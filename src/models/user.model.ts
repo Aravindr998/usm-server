@@ -6,21 +6,50 @@ export interface IUser extends Document {
   password: string
 }
 
+export const userFormItems = [
+	{
+		key: "name",
+		type: "text",
+		mongooseType: String,
+		required: true
+	},
+	{
+		key: "email",
+		type: "email",
+		mongooseType: String,
+		required: true,
+		unique: true,
+		uniqueMessage: "Email address already exists, please login to continue",
+		index: true
+	},
+	{
+		key: "password",
+		type: "password",
+		mongooseType: String,
+		required: true
+	},
+	{
+		key: "isVerified",
+		type: "static",
+		mongooseType: Boolean,
+		defaultValue: false,
+		required: true
+	},
+]
+
+  const schemaDefinition = userFormItems.reduce((acc: Record<string, any>, {key, mongooseType, required, unique = false, index = false, uniqueMessage, defaultValue}) => {
+		acc[key] = {
+			type: mongooseType,
+			required,
+			unique: [unique, uniqueMessage || "Field already exists"],
+			index,
+			default: defaultValue
+		}
+		return acc
+	}, {})
+
 const userSchema = new Schema<IUser>(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-  },
+  schemaDefinition,
   {
     timestamps: true,
   }
