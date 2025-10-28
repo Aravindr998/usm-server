@@ -10,7 +10,6 @@ export const validateFormEntryBody = (body: Record <string, any>, formItem: Reco
     const formError: Record<string, string> = {}
     const obj: Record<string, any> = {}
     formItem.forEach(({key, required, type, defaultValue} ) => {
-        console.log(defaultValue, "defaultValue")
           const value = body[key]
           if (defaultValue === undefined && required && (value === undefined || value === null || value === "")) {
             formError[key] = `${key} is required`

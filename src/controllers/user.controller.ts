@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from "express"
 import { createUser, getAllUsers, UserInput } from "../services/user.service"
 import { userFormItems } from "../models/user.model"
-import { validateAlphaNumeric, validateEmail, validateFormEntryBody } from "../utils/validation"
+import {  validateFormEntryBody } from "../utils/validation"
 import { generateOtp } from "../utils/common"
 import { sendMail } from "../services/email.service"
 import { getOtp, saveOtp } from "../services/otp.service"
 import { OtpSchema } from "../types/models.types"
+import { logger } from "../utils/logger"
 
 export const getUsers = async (_req: Request, res: Response, next: NextFunction) => {
     try {
@@ -25,7 +26,6 @@ export const registerUser = async (_req: Request, res: Response, next: NextFunct
       return next(error)
     }
     const savedUser = await createUser(user as UserInput)
-    res.status(201).json({ success: true, user: savedUser })
     const otp = generateOtp().toString()
     await sendMail({
       to: savedUser.email,
@@ -37,9 +37,10 @@ export const registerUser = async (_req: Request, res: Response, next: NextFunct
       email: savedUser.email,
       purpose: "signup"
     } as OtpSchema
-
     await saveOtp(otpSchema)
+    return res.status(201).json({ success: true, user: savedUser })
   } catch (error) {
+    logger.error("Email send error here", error)
     next(error)
   }
 }
