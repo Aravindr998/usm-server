@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, SchemaTimestampsConfig } from "mongoose";
 
 
 export interface IOtp extends Document {
@@ -6,6 +6,8 @@ export interface IOtp extends Document {
     expiresAt: Date,
     purpose: "signup" | "login" | "password_reset",
     email: string,
+    createdAt?: Date,
+    updatedAt?: Date
 }
 
 const otpSchema = new Schema<IOtp>(
