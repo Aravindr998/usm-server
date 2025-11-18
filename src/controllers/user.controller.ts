@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express"
-import { createUser, getAllUsers, UserInput } from "../services/user.service"
+import { createToken, createUser, getAllUsers, getUserByEmail, UserInput, verifyUser } from "../services/user.service"
 import { userFormItems } from "../models/user.model"
 import {  validateFormEntryBody } from "../utils/validation"
 import { generateOtp } from "../utils/common"
 import { sendMail } from "../services/email.service"
-import { getOtp, saveOtp, updateOtp } from "../services/otp.service"
+import { deleteOtp, getOtp, saveOtp, sendOtp, updateOtp } from "../services/otp.service"
 import { OtpSchema } from "../types/models.types"
 import { logger } from "../utils/logger"
 
@@ -26,18 +26,7 @@ export const registerUser = async (_req: Request, res: Response, next: NextFunct
       return next(error)
     }
     const savedUser = await createUser(user as UserInput)
-    const otp = generateOtp().toString()
-    await sendMail({
-      to: savedUser.email,
-      subject: "OTP for email verification",
-      text: `Your OTP for email verification is ${otp}`
-    })
-    const otpSchema = {
-      otp,
-      email: savedUser.email,
-      purpose: "signup"
-    } as OtpSchema
-    await saveOtp(otpSchema)
+    await sendOtp(savedUser.email)
     return res.status(201).json({ success: true, user: savedUser })
   } catch (error) {
     logger.error("Email send error here", error)
@@ -55,15 +44,33 @@ export const verifyOtp = async (_req: Request, res: Response, next: NextFunction
       }
       return next(error)
     }
+    const userData = await getUserByEmail(email)
+    if (!userData) {
+      const error = {
+        status: 400,
+        message: "Invalid Request"
+      }
+      return next(error)
+    }
+    if (userData.isVerified) {
+      const error = {
+        status: 400,
+        message: "User already verified, Please sign in"
+      }
+      next(error)
+    }
     const otpData = await getOtp(email)
     if (!otpData) {
       const error = {
         status: 400,
-        message: "Invalid request"
+        message: "OTP Expired, Please enter the latest OTP"
       }
+      await sendOtp(userData.email)
       return next(error)
     }
     if (otp === otpData.otp && new Date() <= otpData.expiresAt) {
+      await deleteOtp(email)
+      await verifyUser(email)
       return res.status(200).json({success: true})
     } else {
       return next({
@@ -120,5 +127,41 @@ export const resendOtp = async (_req: Request, res: Response, next: NextFunction
     }
   } catch (error) {
     next(error)
+  }
+}
+
+export const loginUser = async(_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const invalidCredentialError = {
+        status: 401,
+        message: "Invalid Credentials"
+      }
+    const {email, password} = _req.body
+    if (!email || !password) {
+      return next(invalidCredentialError)
+    }
+    const user = await getUserByEmail(email)
+    if (!user) {
+      const error = {
+        status: 400,
+        message: "Please register to continue"
+      }
+      return next(error)
+    }
+  const comparison = await user.comparePassword(password)
+  if (!comparison) {
+    return next(invalidCredentialError)
+  }
+  const tokenData = {
+    id: user.id,
+    email: user.email
+  }
+  const token = await createToken(tokenData)
+  return res.json({
+    success: true,
+    token
+  })
+  } catch (error) {
+    
   }
 }

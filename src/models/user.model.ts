@@ -1,9 +1,12 @@
-import mongoose, { Document, Schema } from "mongoose"
+import mongoose, { CallbackError, Document, Schema } from "mongoose"
+import bcrypt from "bcrypt";
 
 export interface IUser extends Document {
   name: string
   email: string
   password: string
+  isVerified: boolean
+  comparePassword: (password: string) => Promise<boolean>
 }
 
 export const userFormItems = [
@@ -54,5 +57,22 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
   }
 )
+
+userSchema.pre("save", async function (next) {
+	console.log(this.isModified("password"), "user.isModified('password')")
+	if (!this.isModified("password")) return next()
+	try {
+		const salt = await bcrypt.genSalt(10)
+		this.password = await bcrypt.hash(this.password, salt)
+		next()
+	} catch (error) {
+		next(error as CallbackError)
+	}
+})
+
+userSchema.methods.comparePassword = async function(candidatePassword: string) {
+	const comparison = await bcrypt.compare(candidatePassword, this.password)
+	return comparison
+}
 
 export const User = mongoose.model<IUser>("User", userSchema)

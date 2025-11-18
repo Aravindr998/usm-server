@@ -40,4 +40,6 @@ const otpSchema = new Schema<IOtp>(
     { timestamps: true }
 )
 
+otpSchema.index({ expiresAt: 1 }, {expireAfterSeconds: 0})
+
 export const OtpModel = model("Otp", otpSchema)
