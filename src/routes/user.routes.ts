@@ -1,16 +1,9 @@
-import { Router } from "express"
-import { getUsers, registerUser, verifyOtp, resendOtp, loginUser } from "../controllers/user.controller"
+import { Router } from "express";
+import { getUser } from "../controllers/user.controller";
+import { authHandler } from "../middleware/authHandler";
 
 const router = Router()
 
-router.post("/", getUsers)
-
-//registration
-router.post("/register", registerUser)
-router.post("/verify-otp", verifyOtp)
-router.post("/resend-otp", resendOtp)
-
-//login
-router.post("/login", loginUser)
+router.post("/", authHandler, getUser)
 
 export default router
