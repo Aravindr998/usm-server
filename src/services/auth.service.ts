@@ -1,5 +1,5 @@
 import { ENV } from "../config/env";
-import { IUser, User } from "../models/auth.model";
+import { IAuth, Auth } from "../models/auth.model";
 import jwt from "jsonwebtoken";
 
 export type UserInput = {
@@ -8,21 +8,21 @@ export type UserInput = {
   password: number;
 };
 
-export const getAllUsers = async (): Promise<IUser[]> => {
-  return User.find();
+export const getAllUsers = async (): Promise<IAuth[]> => {
+  return Auth.find();
 };
 
-export const createUser = async (data: UserInput): Promise<IUser> => {
-  const user = new User(data);
+export const createUser = async (data: UserInput): Promise<IAuth> => {
+  const user = new Auth(data);
   return user.save();
 };
 
 export const verifyUser = async (email: string) => {
-  await User.findOneAndUpdate({ email }, { isVerified: true });
+  await Auth.findOneAndUpdate({ email }, { isVerified: true });
 };
 
-export const getUserByEmail = async (email: string): Promise<IUser | null> => {
-  return User.findOne({ email });
+export const getUserByEmail = async (email: string): Promise<IAuth | null> => {
+  return Auth.findOne({ email });
 };
 
 export const createToken = async (data: Record<string, string>) => {
@@ -31,8 +31,10 @@ export const createToken = async (data: Record<string, string>) => {
 };
 
 export const verifyToken = (token: string) => {
+  console.log(token, "token")
   try {
     const decoded = jwt.verify(token, ENV.JWT_SECRET);
+    console.log(decoded, "decoded")
     return decoded;
   } catch (error) {
     if (error instanceof Error) {

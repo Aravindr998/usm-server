@@ -7,6 +7,8 @@ import { sendMail } from "../services/email.service"
 import { deleteOtp, getOtp, saveOtp, sendOtp, updateOtp } from "../services/otp.service"
 import { OtpSchema } from "../types/models.types"
 import { logger } from "../utils/logger"
+  import { saveUser } from "../services/user.service"
+import mongoose, { mongo } from "mongoose"
 
 export const getUsers = async (_req: Request, res: Response, next: NextFunction) => {
     try {
@@ -71,6 +73,11 @@ export const verifyOtp = async (_req: Request, res: Response, next: NextFunction
     if (otp === otpData.otp && new Date() <= otpData.expiresAt) {
       await deleteOtp(email)
       await verifyUser(email)
+      await saveUser({
+        email: userData.email,
+        name: userData.name,
+        authId: (userData._id as mongoose.Types.ObjectId).toString()
+      })
       return res.status(200).json({success: true})
     } else {
       return next({
@@ -152,6 +159,7 @@ export const loginUser = async(_req: Request, res: Response, next: NextFunction)
   if (!comparison) {
     return next(invalidCredentialError)
   }
+  console.log(user)
   const tokenData = {
     id: user.id,
     email: user.email

@@ -5,8 +5,13 @@ import { logger } from "../utils/logger";
 
 declare module "express-serve-static-core" {
   interface Request {
-    user?: string | JwtPayload;
+    user?: DecodedToken;
   }
+}
+
+interface DecodedToken extends JwtPayload {
+    email: string;
+    id: string;
 }
 
 export const authHandler = (_req: Request, res: Response, next: NextFunction) => {
@@ -21,7 +26,7 @@ export const authHandler = (_req: Request, res: Response, next: NextFunction) =>
         if (!token) return next(authenticationError)
         try {
             const decoded = verifyToken(token)
-            _req.user = decoded
+            _req.user = decoded as DecodedToken
             return next()
         } catch (error) {
             return next(authenticationError)

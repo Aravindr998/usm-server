@@ -1,7 +1,7 @@
 import mongoose, { CallbackError, Document, Schema } from "mongoose"
 import bcrypt from "bcrypt";
 
-export interface IUser extends Document {
+export interface IAuth extends Document {
   name: string
   email: string
   password: string
@@ -51,7 +51,7 @@ export const userFormItems = [
 		return acc
 	}, {})
 
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema<IAuth>(
   schemaDefinition,
   {
     timestamps: true,
@@ -74,4 +74,4 @@ userSchema.methods.comparePassword = async function(candidatePassword: string) {
 	return comparison
 }
 
-export const User = mongoose.model<IUser>("User", userSchema)
+export const Auth = mongoose.model<IAuth>("Auth", userSchema)
